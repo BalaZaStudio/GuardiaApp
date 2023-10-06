@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+
+  <title>Guardia App</title>
+
+  <style>
+    /* Estilos para el icono de reloj */
+    #clockIcon {
+      font-size: 24px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    /* Estilos para la ventana emergente */
+    .clock-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    /* Estilos para el contenido de la ventana emergente */
+    .clock-content {
+      text-align: center;
+      font-size: 18px;
+    }
+
+
+    .historial-row {
+      /* Estilos para las filas de la tabla */
+      background-color: #000000;
+      color: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #historialContent {
+      max-height: 300px;
+      /* Altura máxima para mostrar en una página */
+      overflow-y: auto;
+      /* Agregar desplazamiento vertical si es necesario */
+      overflow-y: scroll;
+      /* Habilita la barra de desplazamiento vertical */
+    }
+
+    #pagination {
+
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #pagination button:disabled {
+      opacity: 0.5;
+      /* Botones de navegación deshabilitados con opacidad reducida */
+    }
+
+
+
+    .settings-container {
+      position: fixed;
+      bottom: 20px;
+      /* Ajusta la posición vertical según sea necesario */
+      right: 20px;
+      /* Ajusta la posición horizontal según sea necesario */
+      cursor: pointer;
+      z-index: 999;
+
+    }
+
+    /* Estilos para los días laborables (de lunes a viernes) */
+    .day.laborable {
+      background-color: #f0f0f0;
+      /* Color de fondo para días laborables */
+      color: #333;
+      /* Color del texto para días laborables */
+      font-weight: bold;
+      /* Texto en negrita para días laborables */
+    }
+
+    /* Estilos para los fines de semana (sábado y domingo) */
+    .day.fin-de-semana {
+      background-color: #ddd;
+      /* Color de fondo para fines de semana */
+      color: #888;
+      /* Color del texto para fines de semana */
+      font-weight: normal;
+      /* Texto no en negrita para fines de semana */
+    }
+
+    /* Agrega estilos para el icono de cambio de modo */
+    .modo-icon {
+      position: absolute;
+      top: 10px;
+      /* Ajusta la posición vertical según tu preferencia */
+      right: 10px;
+      /* Ajusta la posición horizontal según tu preferencia */
+      cursor: pointer;
+    }
+
+    /* Agrega estilos para el modo oscuro */
+    .dark-mode {
+      background-color: #333;
+      color: #fff;
+      /* ... (otros estilos de modo oscuro) ... */
+    }
+
+
+    /* Agregar márgenes en la ventana de "Guardias" */
+    .window#guardiasContainer {
+      margin: 20px;
+      /* Margen alrededor de toda la ventana */
+    }
+
+    /* Espaciado entre etiquetas <label> y campos de entrada <input> */
+    .form label {
+      margin-bottom: 10px;
+      /* Margen inferior para etiquetas */
+    }
+
+    .form input {
+      margin-bottom: 20px;
+      /* Margen inferior para campos de entrada */
+    }
+
+    /* Espaciado entre los campos de entrada y el botón */
+    .form button {
+      margin-top: 10px;
+      /* Margen superior para el botón */
+    }
+
+    /* Estilos generales para pantallas grandes (por defecto) */
+    body {
+      font-size: 16px;
+    }
+
+    /* Estilos para tablets y dispositivos con ancho de pantalla de hasta 768px */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px;
+      }
+    }
+
+    /* Estilos para dispositivos móviles con ancho de pantalla de hasta 480px */
+    @media (max-width: 480px) {
+      body {
+        font-size: 12px;
+      }
+    }
+
+    /* Animación para fadeIn y fadeOut */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0;
+      }
+    }
+
+    /* Estilos para la ventana principal */
+    #mainContainer {
+      animation-name: fadeIn;
+      align-items: center;
+    }
+
+    /* Estilos para la ventana de Cuadrante */
+    #calendarContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation-name: fadeIn;
+    }
+
+    /* Estilos para la ventana de Guardias */
+    #guardiasContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation-name: fadeIn;
+      padding: 20px;
+    }
+
+    /* Estilos para la ventana de Historial */
+    #historialContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation-name: fadeIn;
+      padding: 20px;
+      overflow-y: scroll;
+      /* Habilita la barra de desplazamiento vertical */
+    }
+
+    #guardiasButton {
+      align-items: center;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: content;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      background-image: url(fondo.png);
+      background-size: contain;
+      /* Ajusta el tamaño de la imagen al tamaño del elemento */
+      background-repeat: no-repeat;
+      /* Evita que la imagen se repita */
+      background-attachment: fixed;
+      /* Fija la imagen para que no se desplace con el contenido */
+    }
+
+    .animation-container {
+      text-align: center;
+      animation: fadeOut 2s ease-in-out;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin: 0;
+      color: #333;
+    }
+
+    .buttons {
+      display: flex;
+      margin-top: 20px;
+      align-items: center;
+
+
+    }
+
+    button {
+      min-width: 130px;
+      height: 40px;
+      color: #fff;
+      padding: 5px 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      display: inline-block;
+      outline: none;
+      border-radius: 5px;
+      border: none;
+      background-size: 120% auto;
+      background-image: linear-gradient(315deg,
+          #833ab4 0%,
+          #fd1d1d 50%,
+          #fcb045);
+    }
+
+    button:hover {
+      background-position: right center;
+    }
+
+    button:active {
+      top: 2px;
+    }
+
+    .copyright {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.5em;
+
+      /* Color del texto (rojo) */
+      text-shadow: 10px black;
+
+    }
+
+    .calendar-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    /* Estilos para el calendario */
+    .calendar {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 450px;
+    }
+
+    .day {
+      width: 8.28%;
+      /* Ancho fijo para cada día */
+      text-align: center;
+      padding: 8px;
+      cursor: pointer;
+      margin-right: 5px;
+      /* Margen derecho para separar los días */
+    }
+
+    .day.guardia {
+      background-color: #ff0000;
+      color: #fff;
+    }
+
+
+
+    /* Nuevos estilos para el calendario */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .calendar-header button {
+      font-size: 1.2em;
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .calendar-header button:hover {
+      background-color: #0056b3;
+    }
+
+    .calendar-header h3 {
+      font-size: 1.5em;
+      color: #ffffff;
+      /* Color del texto (rojo) */
+      text-shadow:
+        -1px -2px 0 #000000,
+        /* Sombra superior-izquierda (color y posición) */
+        2px -2px 0 #000000,
+        /* Sombra superior-derecha (color y posición) */
+        -2px 2px 0 #000000,
+        /* Sombra inferior-izquierda (color y posición) */
+        2px 2px 0 #000000;
+      /* Sombra inferior-derecha (color y posición) */
+
+    }
+
+    .titulo {
+      text-align: center;
+      font: bold 80px/1 arial;
+      text-transform: uppercase;
+      color: #c69c1e;
+      text-shadow: 0 2px 0 #8b6e15, 0 4px 0 #7c6213, 0 6px 0 #6e5611,
+        0 8px 0 #5f4b0e, 0 10px 0 #503f0c, 0 12px 0 #41330a,
+        3px 8px 15px rgba(0, 0, 0, 0.1), 3px 8px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .titulo1 {
+      margin-bottom: 20px;
+      text-align: center;
+      font: bold 40px/1 arial;
+      text-transform: uppercase;
+      color: #c69c1e;
+      text-shadow: 0 2px 0 #8b6e15, 0 4px 0 #7c6213, 0 6px 0 #6e5611,
+        0 8px 0 #5f4b0e, 0 10px 0 #503f0c, 0 12px 0 #41330a,
+        3px 8px 15px rgba(0, 0, 0, 0.1), 3px 8px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .titulo2 {
+      margin-bottom: 20px;
+      text-align: center;
+      font: bold 40px/1 arial;
+      text-transform: uppercase;
+      color: #c69c1e;
+      text-shadow: 0 2px 0 #8b6e15, 0 4px 0 #7c6213, 0 6px 0 #6e5611,
+        0 8px 0 #5f4b0e, 0 10px 0 #503f0c, 0 12px 0 #41330a,
+        3px 8px 15px rgba(0, 0, 0, 0.1), 3px 8px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.5em;
+      color: #000000;
+      /* Color del texto (rojo) */
+      text-shadow:
+        1px 1px 3px rgb(255, 255, 255);
+      /* Sombra con un tono oscuro y desplazamiento */
+    }
+
+    .form {
+      font-size: 1.5em;
+      color: #ffffff;
+      /* Color del texto (rojo) */
+      text-shadow:
+        3px 3px 3px rgba(0, 0, 0, 0.5);
+      /* Sombra con un tono oscuro y desplazamiento */
+
+    }
+  </style>
+</head>
+
+<body>
+  <div class="window" id="mainContainer">
+    <h1 class="titulo">Guardia</h1>
+    <div class="buttons">
+      <!-- Agregar un icono de reloj (Material Icons) -->
+      <i id="clockIcon" class="material-icons"
+        style="font-size: 24px; margin-right: 10px; cursor: pointer;">schedule</i>
+      <div id="clockPopup" class="clock-popup">
+        <span class="close-button" onclick="closeClockPopup()">&times;</span>
+        <div class="clock-content">
+          <!-- Contenido de la ventana emergente aquí -->
+          <p>Guardias totales: 10</p>
+          <p>Horas de guardia acumuladas: 40</p>
+        </div>
+      </div>
+
+
+
+      <!-- Agregar un div para el icono de cambio de modo -->
+      <div id="modoIcon" class="modo-icon" onclick="toggleDarkMode()">
+        🌙
+      </div>
+
+      <button id="cuadranteButton" style="animation: fadeIn">
+        Cuadrante
+      </button></br>
+      <button id="guardiasButton">Guardias</button></br>
+      <button id="historialButton">Historial</button>
+    </div>
+    <div class="copyright">&copy; Zabala 2023</div>
+  </div>
+
+  <div class="window" id="calendarContainer">
+    <div class="calendar-header">
+      <button id="prevMonth">&lt;</button>
+      <h3 id="currentMonth">Mes actual</h3>
+      <button id="nextMonth">&gt;</button>
+    </div>
+    <div class="calendar" id="calendar">
+      <!-- Agregar una fila para los nombres de los días de la semana -->
+      <div class="day-of-week">Dom</div>
+      <div class="day-of-week">Lun</div>
+      <div class="day-of-week">Mar</div>
+      <div class="day-of-week">Mié</div>
+      <div class="day-of-week">Jue</div>
+      <div class="day-of-week">Vie</div>
+      <div class="day-of-week">Sáb</div>
+      <!-- Fin de la fila para los nombres de los días de la semana -->
+    </div>
+
+    <button id="backToMain" style="animation: fadeIn">
+      Volver a la ventana principal
+    </button>
+  </div>
+
+  <div class="window" id="guardiasContainer" style="display: none">
+    <h1 class="titulo1">Guardias</h1>
+    <div class="form">
+      <label for="nombre">Nombre:</label>
+      <input type="text" id="nombre" required /><br />
+
+      <label for="empleo">Empleo:</label>
+      <input type="text" id="empleo" required /><br />
+
+      <label for="fecha">Fecha de Guardia:</label>
+      <input type="date" id="fecha" required /><br />
+
+      <label for="imagen1">Adjuntar Imagen (Orden):</label>
+      <input type="file" accept="image/jpeg" id="imagen1" /><br />
+
+      <label for="imagen2">Adjuntar Imagen (Parte):</label>
+      <input type="file" accept="image/jpeg" id="imagen2" /><br />
+
+      <button id="guardarGuardia">Guardar</button>
+
+      <button id="volverPrincipal">Volver a la ventana principal</button>
+    </div>
+  </div>
+
+  <div class="window" id="historialContainer" style="display: none">
+    <h1 class="titulo2">Historial</h1>
+
+    <div id="historialTable">
+      <!-- Aquí se mostrará el contenido del historial -->
+      <!-- Cada elemento debe tener una clase que lo identifique -->
+      <div class="historial-row hidden">Item 1</div>
+      <div class="historialItem">Item 2</div>
+      <div class="historialItem">Item 3</div>
+      <div class="historialItem">Item 4</div>
+      <div class="historialItem">Item 5</div>
+      <div class="historialItem">Item 6</div>
+      <div class="historialItem">Item 7</div>
+      <!-- Agrega más elementos según sea necesario -->
+    </div>
+
+    <div id="pagination">
+      <button id="prevPage" disabled>Anterior</button>
+      <span id="pageInfo">Página 1 de 1</span>
+      <button id="nextPage" disabled>Siguiente</button>
+    </div>
+
+    <p>Total de Horas de Guardias: <span id="totalHorasGuardias">0</span> horas</p>
+    <p>Total de Guardias Registradas: <span id="totalGuardias">0</span></p>
+
+    <!-- Agrega los botones ocultos para crear/eliminar la base de datos -->
+    <button id="crearDB" style="display: none">Crear Base de Datos</button>
+    <button id="eliminarDB" style="display: none">Eliminar Base de Datos</button>
+
+    <button id="volverPrincipalDesdeHistorial">Volver a la ventana principal</button>
+
+    <!-- Agrega el icono de rueda dentada -->
+    <div class="settings-container" onclick="toggleSettings()">
+      ⚙️ <!-- Icono de la rueda dentada -->
+    </div>
+  </div>
+
+
+
+  <script>
+    const cuadranteButton = document.getElementById("cuadranteButton");
+    const mainContainer = document.getElementById("mainContainer");
+    const calendarContainer = document.getElementById("calendarContainer");
+    const calendar = document.getElementById("calendar");
+    const backToMainButton = document.getElementById("backToMain");
+    const prevMonthButton = document.getElementById("prevMonth");
+    const nextMonthButton = document.getElementById("nextMonth");
+    const currentMonthText = document.getElementById("currentMonth");
+
+
+    // Obtener la fecha actual
+    const currentDate = new Date("2023-10-05"); // Fecha actual: 5 de octubre de 2023 (jueves)
+
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+
+    function updateCalendar() {
+      calendar.innerHTML = ""; // Limpiar el calendario
+
+      // Crear el calendario (puedes utilizar una librería de calendario aquí)
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      // Ajustar el primer día de la semana según la fecha real del 1 de octubre de 2023
+      const adjustedStartingDay = new Date(currentYear, currentMonth, 1).getDay();
+
+
+      // Crear un array de nombres de días de la semana en el orden español
+      const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+
+      // Llenar los días del mes
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement("div");
+        dayElement.classList.add("day");
+
+        // Calcular el día de la semana actual (0 para domingo, 1 para lunes, ..., 6 para sábado)
+        const currentDayOfWeek = (adjustedStartingDay + day - 1) % 7;
+
+        // Agregar el número del día al elemento
+        dayElement.textContent = day;
+
+        // Agregar el nombre completo del día de la semana debajo del número
+        const dayOfWeekElement = document.createElement("div");
+        dayOfWeekElement.classList.add("day-of-week");
+        dayOfWeekElement.textContent = daysOfWeek[currentDayOfWeek];
+        dayElement.appendChild(dayOfWeekElement);
+
+        // Agregar evento "Guardia" al hacer clic
+        dayElement.addEventListener("click", () => {
+          if (!events[currentYear + "-" + (currentMonth + 1) + "-" + day]) {
+            events[currentYear + "-" + (currentMonth + 1) + "-" + day] = "Guardia";
+          } else {
+            delete events[currentYear + "-" + (currentMonth + 1) + "-" + day];
+          }
+          saveEventsToLocalStorage(events); // Guardar eventos en el almacenamiento local
+          updateCalendarView(); // Actualizar vista de eventos
+        });
+
+        calendar.appendChild(dayElement);
+      }
+
+      // Actualizar automáticamente la vista de eventos
+      updateCalendarView();
+
+      // Actualizar el encabezado con el mes y año actuales
+      currentMonthText.textContent = `${getMonthName(currentMonth)} ${currentYear}`;
+    }
+
+
+    // Función para obtener el nombre del mes
+    function getMonthName(month) {
+      const monthNames = [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+      ];
+      return monthNames[month];
+    }
+
+    // Función para cambiar al mes anterior
+    prevMonthButton.addEventListener("click", () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      updateCalendar();
+    });
+
+    // Función para cambiar al mes siguiente
+    nextMonthButton.addEventListener("click", () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      updateCalendar();
+    });
+
+    // Función para guardar eventos en el almacenamiento local
+    function saveEventsToLocalStorage(events) {
+      localStorage.setItem("guardiaEvents", JSON.stringify(events));
+    }
+
+    // Función para cargar eventos desde el almacenamiento local
+    function loadEventsFromLocalStorage() {
+      const storedEvents = localStorage.getItem("guardiaEvents");
+      return storedEvents ? JSON.parse(storedEvents) : {};
+    }
+
+    let events = loadEventsFromLocalStorage(); // Cargar eventos guardia
+
+    function updateCalendarView() {
+      const dayElements = calendar.querySelectorAll(".day");
+      dayElements.forEach((dayElement) => {
+        const day = parseInt(dayElement.textContent);
+        if (events[currentYear + "-" + (currentMonth + 1) + "-" + day]) {
+          dayElement.classList.add("guardia");
+        } else {
+          dayElement.classList.remove("guardia");
+        }
+
+        // Marcar los sábados y domingos como días de fin de semana
+        const currentDay = new Date(currentYear, currentMonth, day).getDay();
+        if (currentDay === 0 || currentDay === 6) { // 0 es domingo, 6 es sábado
+          dayElement.classList.add("fin-de-semana");
+          dayElement.classList.remove("laborable");
+        } else {
+          dayElement.classList.remove("fin-de-semana");
+          dayElement.classList.add("laborable");
+        }
+      });
+    }
+
+
+
+    // Función para abrir la ventana de Cuadrante
+    cuadranteButton.addEventListener("click", () => {
+      mainContainer.style.animationName = "fadeOut"; // Animación de desaparición de la ventana principal
+      mainContainer.style.display = "none"; // Ocultar la ventana principal
+      calendarContainer.style.display = "flex"; // Mostrar la ventana de Cuadrante
+    });
+
+    // Función para volver a la ventana principal
+    backToMainButton.addEventListener("click", () => {
+      calendarContainer.style.animationName = "fadeOut"; // Animación de desaparición de la ventana de Cuadrante
+      calendarContainer.style.display = "none"; // Ocultar la ventana de Cuadrante
+      mainContainer.style.display = "block"; // Mostrar la ventana principal
+    });
+
+    // Evento para mostrar la ventana de "Guardias" al hacer clic en el botón "Guardias"
+    document.querySelector("button#guardiasButton").addEventListener("click", () => {
+      mainContainer.style.animationName = "fadeOut";
+      mainContainer.style.display = "none";
+      guardiasContainer.style.display = "block";
+    });
+
+    // Evento para mostrar la ventana de "Historial" al hacer clic en el botón "Historial"
+    document.querySelector("button#historialButton").addEventListener("click", () => {
+      mainContainer.style.animationName = "fadeOut";
+      mainContainer.style.display = "none";
+      historialContainer.style.display = "block";
+      loadGuardiaHistory();
+    });
+
+    // Evento para volver a la ventana principal desde la ventana de historial
+    document.querySelector("button#volverPrincipalDesdeHistorial").addEventListener("click", () => {
+      historialContainer.style.animationName = "fadeOut";
+      historialContainer.style.display = "none";
+      mainContainer.style.display = "block";
+    });
+
+    // Obtener referencias a elementos del formulario de "Guardias"
+    const guardiasContainer = document.getElementById("guardiasContainer");
+    const nombreInput = document.getElementById("nombre");
+    const empleoInput = document.getElementById("empleo");
+    const fechaInput = document.getElementById("fecha");
+    const imagen1Input = document.getElementById("imagen1");
+    const imagen2Input = document.getElementById("imagen2");
+    const guardarGuardiaButton = document.getElementById("guardarGuardia");
+    const volverPrincipalButton = document.getElementById("volverPrincipal");
+
+    // Obtener referencias a elementos de la ventana de "Historial"
+    const historialContainer = document.getElementById("historialContainer");
+    const historialTable = document.getElementById("historialTable");
+    const totalHorasGuardias = document.getElementById("totalHorasGuardias");
+    const totalGuardias = document.getElementById("totalGuardias");
+
+    // Evento para mostrar la ventana de "Guardias" al hacer clic en el botón "Guardias"
+    document.querySelector("button#guardiasButton").addEventListener("click", () => {
+      mainContainer.style.animationName = "fadeOut";
+      mainContainer.style.display = "none";
+      guardiasContainer.style.display = "block";
+    });
+
+    // Evento para volver a la ventana principal desde la ventana de "Guardias"
+    volverPrincipalButton.addEventListener("click", () => {
+      guardiasContainer.style.animationName = "fadeOut";
+      guardiasContainer.style.display = "none";
+      mainContainer.style.display = "block";
+    });
+
+    // Evento para guardar una nueva guardia
+    guardarGuardiaButton.addEventListener("click", () => {
+      // Obtener los valores de los campos de entrada
+      const nombre = nombreInput.value;
+      const empleo = empleoInput.value;
+      const fecha = fechaInput.value;
+      const imagen1 = imagen1Input.files[0]; // Primera imagen adjunta
+      const imagen2 = imagen2Input.files[0]; // Segunda imagen adjunta
+
+      // Validar que se haya ingresado un nombre, empleo y fecha
+      if (!nombre || !empleo || !fecha) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: 'Por favor, complete todos los campos.',
+        });
+        return;
+      }
+
+      // Crear un objeto de guardia con la información
+      const guardia = {
+        nombre,
+        empleo,
+        fecha,
+      };
+
+      // Agregar las imágenes al objeto de guardia si están disponibles
+      if (imagen1) {
+        guardia.imagen1 = imagen1;
+      }
+      if (imagen2) {
+        guardia.imagen2 = imagen2;
+      }
+
+      // Guardar la guardia en IndexedDB
+      guardarGuardiaEnIndexedDB(guardia);
+
+      // Limpiar los campos de entrada
+      nombreInput.value = "";
+      empleoInput.value = "";
+      fechaInput.value = "";
+      imagen1Input.value = "";
+      imagen2Input.value = "";
+
+      // Mostrar un mensaje de éxito
+      Swal.fire({
+        icon: 'success',
+        title: 'Éxito',
+        text: 'Guardia registrada con éxito.',
+      });
+
+      // Actualizar el contador de guardias en la ventana principal
+      updateGuardiasCounter();
+    });
+
+    // Función para guardar una guardia en IndexedDB
+    function guardarGuardiaEnIndexedDB(guardia) {
+      // Variable para almacenar la referencia al almacén de objetos
+      let guardiasStore;
+
+      // Abre la base de datos o crea una nueva si no existe
+      const request = indexedDB.open("GuardiasDB", 1);
+
+      request.onerror = function (event) {
+        console.error("Error al abrir la base de datos:", event.target.error);
+      };
+
+
+      // Configurar la estructura de la base de datos si es necesario
+      request.onupgradeneeded = function (event) {
+        const db = event.target.result;
+
+        // Crea un almacén de objetos llamado "guardias"
+        if (!db.objectStoreNames.contains("guardias")) {
+          db.createObjectStore("guardias", { keyPath: "id" }); // Puedes ajustar la clave primaria según tus necesidades
+        }
+      };
+
+      // Maneja la apertura exitosa de la base de datos
+      request.onsuccess = function (event) {
+        const db = event.target.result;
+
+        // Verifica si el almacén de objetos ya existe
+        if (!db.objectStoreNames.contains("guardias")) {
+          // Si no existe, crea el almacén de objetos
+          const versionChangeTransaction = db.transaction([], "versionchange");
+          versionChangeTransaction.onerror = function (event) {
+            console.error("Error al crear el almacén de objetos:", event.target.error);
+          };
+          versionChangeTransaction.oncomplete = function () {
+            console.log("Almacén de objetos 'guardias' creado.");
+          };
+          const objectStore = db.createObjectStore("guardias", { keyPath: "id", autoIncrement: true });
+        }
+
+        // Realiza una transacción de escritura en el almacén de objetos de guardias
+        const transaction = db.transaction(["guardias"], "readwrite");
+        guardiasStore = transaction.objectStore("guardias");
+
+
+        // Agregar la guardia al almacén de objetos
+        const addRequest = guardiasStore.add(guardia);
+
+        addRequest.onsuccess = function () {
+          console.log("Guardia agregada a IndexedDB:", guardia);
+        };
+
+        addRequest.onerror = function () {
+          console.error("Error al agregar la guardia a IndexedDB:", addRequest.error);
+        };
+
+        // Completar la transacción
+        transaction.oncomplete = function () {
+          console.log("Transacción completada.");
+          db.close();
+        };
+
+        transaction.onerror = function () {
+          console.error("Error en la transacción:", transaction.error);
+        };
+      };
+    }
+
+    // Función para cargar el historial de guardias desde IndexedDB
+    function loadGuardiaHistory() {
+      // Abrir la base de datos o crearla si no existe
+      const request = indexedDB.open("GuardiasDB", 1);
+
+      request.onerror = function (event) {
+        console.error("Error al abrir la base de datos:", event.target.error);
+      };
+
+      // Manejar la apertura exitosa de la base de datos
+      request.onsuccess = function (event) {
+        const db = event.target.result;
+
+        // Realizar una transacción de lectura en el almacén de objetos de guardias
+        const transaction = db.transaction(["guardias"], "readonly");
+        const guardiasStore = transaction.objectStore("guardias");
+
+        // Obtener todos los registros de guardias
+        const getAllRequest = guardiasStore.getAll();
+
+        getAllRequest.onsuccess = function () {
+          // Limpiar la tabla de historial
+          historialTable.innerHTML = "";
+
+          const guardias = getAllRequest.result;
+
+          // Calcular el total de horas de guardias y el total de guardias registradas
+          let totalHoras = 0;
+          let totalGuardiasRegistradas = 0;
+
+          // Recorrer las guardias y agregarlas a la tabla de historial
+          guardias.forEach((guardia) => {
+            const tableRow = document.createElement("div");
+            tableRow.classList.add("historial-row");
+
+            const nombreCell = document.createElement("div");
+            nombreCell.textContent = `Nombre: ${guardia.nombre}`;
+            tableRow.appendChild(nombreCell);
+
+            const empleoCell = document.createElement("div");
+            empleoCell.textContent = `Empleo: ${guardia.empleo}`;
+            tableRow.appendChild(empleoCell);
+
+            const fechaCell = document.createElement("div");
+            fechaCell.textContent = `Fecha de Guardia: ${guardia.fecha}`;
+            tableRow.appendChild(fechaCell);
+
+            const horasCell = document.createElement("div");
+            const horasGuardia = calcularHorasGuardia(guardia);
+            horasCell.textContent = `Horas de Guardia: ${horasGuardia} horas`;
+            tableRow.appendChild(horasCell);
+
+            // Botón para eliminar la guardia
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Eliminar";
+            deleteButton.addEventListener("click", () => {
+              eliminarGuardiaDeIndexedDB(guardia.id);
+            });
+            tableRow.appendChild(deleteButton);
+
+            // Botón para ver las imágenes adjuntas
+            if (guardia.imagen1 || guardia.imagen2) {
+              const viewImagesButton = document.createElement("button");
+              viewImagesButton.textContent = "Ver Imágenes";
+              viewImagesButton.addEventListener("click", () => {
+                verImagenesAdjuntas(guardia);
+              });
+              tableRow.appendChild(viewImagesButton);
+            }
+
+            historialTable.appendChild(tableRow);
+
+            // Actualizar el total de horas y el total de guardias registradas
+            totalHoras += horasGuardia;
+            totalGuardiasRegistradas++;
+          });
+
+          // Actualizar el contador de horas de guardias y el contador de guardias
+          totalHorasGuardias.textContent = totalHoras;
+          totalGuardias.textContent = totalGuardiasRegistradas;
+        };
+
+        getAllRequest.onerror = function () {
+          console.error(
+            "Error al obtener las guardias desde IndexedDB:",
+            getAllRequest.error
+          );
+        };
+
+        // Completar la transacción
+        transaction.oncomplete = function () {
+          console.log("Transacción completada.");
+          db.close();
+        };
+
+        transaction.onerror = function () {
+          console.error("Error en la transacción:", transaction.error);
+        };
+      };
+    }
+
+    // Función para calcular las horas de guardia de una guardia
+    function calcularHorasGuardia(guardia) {
+      // Aquí puedes implementar la lógica para calcular las horas de guardia
+      // Asumiremos que hay una diferencia de 24 horas entre el inicio y el fin de la guardia
+      return 24;
+    }
+
+    // Función para eliminar una guardia de IndexedDB
+    function eliminarGuardiaDeIndexedDB(guardiaId) {
+      // Abrir la base de datos o crearla si no existe
+      const request = indexedDB.open("GuardiasDB", 1);
+
+      request.onerror = function (event) {
+        console.error("Error al abrir la base de datos:", event.target.error);
+      };
+
+      // Manejar la apertura exitosa de la base de datos
+      request.onsuccess = function (event) {
+        const db = event.target.result;
+
+        // Realizar una transacción de escritura en el almacén de objetos de guardias
+        const transaction = db.transaction(["guardias"], "readwrite");
+        const guardiasStore = transaction.objectStore("guardias");
+
+        // Eliminar la guardia por su ID
+        const deleteRequest = guardiasStore.delete(guardiaId);
+
+        deleteRequest.onsuccess = function () {
+          console.log(`Guardia con ID ${guardiaId} eliminada.`);
+          loadGuardiaHistory(); // Recargar el historial después de la eliminación
+        };
+
+        deleteRequest.onerror = function () {
+          console.error(
+            `Error al eliminar la guardia con ID ${guardiaId}:`,
+            deleteRequest.error
+          );
+        };
+
+        // Completar la transacción
+        transaction.oncomplete = function () {
+          console.log("Transacción completada.");
+          db.close();
+        };
+
+        transaction.onerror = function () {
+          console.error("Error en la transacción:", transaction.error);
+        };
+      };
+    }
+
+    // Función para ver las imágenes adjuntas de una guardia
+    function verImagenesAdjuntas(guardia) {
+      // Crear una ventana emergente o una superposición para mostrar las imágenes
+      const overlay = document.createElement("div");
+      overlay.classList.add("image-overlay");
+
+      // Crear un contenedor para las imágenes
+      const imageContainer = document.createElement("div");
+      imageContainer.classList.add("image-container");
+
+      // Función para cerrar la ventana emergente
+      function cerrarVentana() {
+        overlay.remove();
+      }
+
+      // Crear un botón para cerrar la ventana
+      const closeButton = document.createElement("button");
+      closeButton.classList.add("close-button");
+      closeButton.textContent = "X";
+      closeButton.addEventListener("click", cerrarVentana);
+
+      overlay.addEventListener("click", cerrarVentana);
+
+      // Función para detener la propagación del evento de clic en el contenedor de imágenes
+      imageContainer.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+
+      // Crear elementos de imagen para las imágenes adjuntas
+      if (guardia.imagen1) {
+        const image1 = document.createElement("img");
+        image1.src = URL.createObjectURL(guardia.imagen1);
+        image1.style.maxWidth = "400px";
+        image1.style.maxHeight = "650px";
+        imageContainer.appendChild(image1);
+      }
+
+      if (guardia.imagen2) {
+        const image2 = document.createElement("img");
+        image2.src = URL.createObjectURL(guardia.imagen2);
+        image2.style.maxWidth = "400px";
+        image2.style.maxHeight = "650px";
+        imageContainer.appendChild(image2);
+      }
+
+      // Agregar el botón de cierre y el contenedor de imágenes a la ventana emergente
+      overlay.appendChild(closeButton);
+      overlay.appendChild(imageContainer);
+
+      // Agregar la ventana emergente al cuerpo del documento
+      document.body.appendChild(overlay);
+    }
+
+    // Función para inicializar la base de datos
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("GuardiasDB", 1);
+
+        request.onerror = function (event) {
+          console.error("Error al abrir la base de datos:", event.target.error);
+          reject(event.target.error);
+        };
+
+        request.onsuccess = function (event) {
+          const db = event.target.result;
+          resolve(db);
+        };
+
+        request.onupgradeneeded = function (event) {
+          const db = event.target.result;
+
+          // Verificar si el almacén de objetos 'guardias' ya existe
+          if (!db.objectStoreNames.contains("guardias")) {
+            // Si no existe, créalo aquí
+            const guardiasStore = db.createObjectStore("guardias", {
+              keyPath: 'id',
+              autoIncrement: true
+            });
+            // Puedes definir la estructura del almacén de objetos aquí, si es necesario
+            // guardiasStore.createIndex("nombre", "nombre", { unique: false });
+          }
+        };
+      });
+    }
+
+    // Función para actualizar el contador de guardias en la ventana principal
+    function updateGuardiasCounter() {
+      // Inicializar la base de datos
+      initDB()
+        .then((db) => {
+          // Realizar una transacción de lectura en el almacén de objetos de guardias
+          const transaction = db.transaction("guardias", "readonly");
+          const guardiasStore = transaction.objectStore("guardias");
+
+          // Obtener todos los registros de guardias
+          const getAllRequest = guardiasStore.getAll();
+
+          getAllRequest.onsuccess = function () {
+            // Obtener el número total de guardias registradas
+            const totalGuardias = getAllRequest.result.length;
+
+            // Actualizar el contador en la ventana principal
+            const guardiasButton = document.getElementById("guardiasButton");
+            guardiasButton.textContent = `Guardias (${totalGuardias})`;
+
+            // Completar la transacción
+            transaction.oncomplete = function () {
+              console.log("Transacción completada.");
+            };
+          };
+
+          getAllRequest.onerror = function () {
+            console.error(
+              "Error al obtener las guardias desde IndexedDB:",
+              getAllRequest.error
+            );
+          };
+        })
+        .catch((error) => {
+          console.error("Error al inicializar la base de datos:", error);
+        });
+    }
+
+    // Llamar a la función para actualizar el contador de guardias
+    updateGuardiasCounter();
+
+    document.getElementById("crearDB").addEventListener("click", function () {
+      // Nombre de la base de datos y versión
+      const dbName = "GuardiasDB";
+      const dbVersion = 1;
+
+      // Intenta abrir la base de datos o crear una nueva si no existe
+      const request = indexedDB.open(dbName, dbVersion);
+
+      // Manejar errores en la apertura de la base de datos
+      request.onerror = function (event) {
+        console.error("Error al abrir o crear la base de datos:", event.target.error);
+      };
+
+      // Manejar el éxito de la apertura o creación de la base de datos
+      request.onsuccess = function (event) {
+        const db = event.target.result;
+        console.log("Base de datos creada o abierta con éxito:", db);
+
+        // Puedes realizar más operaciones aquí, como crear almacenes de objetos y más.
+      };
+
+      // Definir el esquema de la base de datos (si es necesario)
+      request.onupgradeneeded = function (event) {
+        const db = event.target.result;
+
+        // Crea un almacén de objetos llamado "guardias" si no existe
+        if (!db.objectStoreNames.contains("guardias")) {
+          db.createObjectStore("guardias", { keyPath: "id", autoIncrement: true });
+          console.log("Almacén de objetos 'guardias' creado.");
+        }
+      };
+    });
+
+    document.getElementById("eliminarDB").addEventListener("click", function () {
+      // Nombre de la base de datos a eliminar
+      const dbName = "GuardiasDB";
+
+      // Intenta eliminar la base de datos
+      const deleteRequest = indexedDB.deleteDatabase(dbName);
+
+      // Manejar el éxito o el error al eliminar la base de datos
+      deleteRequest.onsuccess = function () {
+        console.log("Base de datos eliminada con éxito.");
+      };
+
+      deleteRequest.onerror = function (event) {
+        console.error("Error al eliminar la base de datos:", event.target.error);
+      };
+    });
+
+
+    // Inicializar el calendario al cargar la página
+    updateCalendar();
+
+    // Actualizar el contador de guardias en la ventana principal al cargar la página
+    updateGuardiasCounter();
+
+    // Agrega un estado de modo oscuro a localStorage para recordar la preferencia
+    // (1 para modo oscuro, 0 para modo claro)
+    function setDarkModePreference(isDarkMode) {
+      localStorage.setItem("darkMode", isDarkMode ? "1" : "0");
+    }
+
+    // Cambia entre el modo claro y oscuro
+    function toggleDarkMode() {
+      const body = document.body;
+
+      // Verifica el estado actual del modo
+      const isDarkMode = body.classList.toggle("dark-mode");
+
+      // Guarda la preferencia del usuario en localStorage
+      setDarkModePreference(isDarkMode);
+    }
+
+    // Verifica la preferencia de modo oscuro guardada en localStorage al cargar la página
+    function checkDarkModePreference() {
+      const body = document.body;
+      const darkModePreference = localStorage.getItem("darkMode");
+
+      if (darkModePreference === "1") {
+        body.classList.add("dark-mode");
+      }
+    }
+
+    // Ejecuta la verificación de modo oscuro al cargar la página
+    checkDarkModePreference();
+
+    // Función para mostrar u ocultar los botones de Crear y Eliminar Base de Datos
+    function toggleSettings() {
+      const crearDBButton = document.getElementById("crearDB");
+      const eliminarDBButton = document.getElementById("eliminarDB");
+
+      // Comprueba si los botones están visibles y los oculta, o viceversa
+      if (crearDBButton.style.display === "none" || crearDBButton.style.display === "") {
+        crearDBButton.style.display = "block";
+        eliminarDBButton.style.display = "block";
+      } else {
+        crearDBButton.style.display = "none";
+        eliminarDBButton.style.display = "none";
+      }
+    }
+
+
+
+    const itemsPerPage = 5; // Cantidad de elementos por página
+    let currentPage = 1; // Página actual
+
+    const prevPageButton = document.getElementById("prevPage");
+    const nextPageButton = document.getElementById("nextPage");
+    const pageInfo = document.getElementById("pageInfo");
+
+    function updatePagination() {
+      const historialTable = document.getElementById("historialTable");
+      const totalItems = historialTable.children.length; // Cantidad total de elementos
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+      // Habilitar/deshabilitar botones de navegación
+      prevPageButton.disabled = currentPage === 1;
+      nextPageButton.disabled = currentPage === totalPages;
+
+      // Aplica la clase 'hidden' a todas las filas
+      const allRows = historialTable.querySelectorAll(".historial-row");
+      allRows.forEach((row) => {
+        row.classList.add("hidden");
+      });
+
+      // Calcula el rango de elementos a mostrar
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = currentPage * itemsPerPage;
+
+      // Muestra solo las filas del rango actual eliminando la clase 'hidden'
+      for (let i = startIndex; i < endIndex && i < totalItems; i++) {
+        const row = allRows[i];
+        if (row) {
+          row.classList.remove("hidden");
+        }
+      }
+
+      pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+    }
+
+
+    prevPageButton.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        updatePagination();
+      }
+    });
+
+    nextPageButton.addEventListener("click", () => {
+      const historialTable = document.getElementById("historialTable");
+      const totalItems = historialTable.children.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+      if (currentPage < totalPages) {
+        currentPage++;
+        updatePagination();
+      }
+    });
+
+    // Llama a updatePagination cuando se carga la página completamente
+    document.addEventListener("DOMContentLoaded", () => {
+      updatePagination();
+      // Llama a updatePagination después de asegurarte de que los elementos estén disponibles
+      const historialTable = document.getElementById("historialTable");
+      if (historialTable) {
+        updatePagination();
+      }
+    });
+
+    // Agregar evento al icono de reloj
+    const clockIcon = document.getElementById("clockIcon");
+    clockIcon.addEventListener("click", () => {
+      // Calcular los datos de guardias totales y horas de guardia acumuladas
+      initDB()
+        .then((db) => {
+          const transaction = db.transaction("guardias", "readonly");
+          const guardiasStore = transaction.objectStore("guardias");
+
+          const getAllRequest = guardiasStore.getAll();
+
+          getAllRequest.onsuccess = function () {
+            const guardias = getAllRequest.result;
+            const totalGuardias = guardias.length;
+
+            let totalHoras = 0;
+            guardias.forEach((guardia) => {
+              const horasGuardia = calcularHorasGuardia(guardia);
+              totalHoras += horasGuardia;
+            });
+            function closeClockPopup() {
+              var clockPopup = document.getElementById("clockPopup");
+              clockPopup.style.display = "none";
+            }
+            // Mostrar la ventana emergente con los datos
+            showClockPopup(totalGuardias, totalHoras);
+          };
+
+          getAllRequest.onerror = function () {
+            console.error(
+              "Error al obtener las guardias desde IndexedDB:",
+              getAllRequest.error
+            );
+          };
+        })
+        .catch((error) => {
+          console.error("Error al inicializar la base de datos:", error);
+        });
+    });
+
+    // Función para mostrar la ventana emergente con los datos
+    function showClockPopup(totalGuardias, totalHoras) {
+      const clockPopup = document.createElement("div");
+      clockPopup.classList.add("clock-popup");
+
+      const clockContent = document.createElement("div");
+      clockContent.classList.add("clock-content");
+      clockContent.innerHTML = `
+    <p>Total de Guardias: ${totalGuardias}</p>
+    <p>Total de Horas de Guardia: ${totalHoras} horas</p>
+  `;
+
+      clockPopup.appendChild(clockContent);
+      document.body.appendChild(clockPopup);
+
+      // Agregar evento para cerrar la ventana emergente al hacer clic fuera de ella
+      clockPopup.addEventListener("click", (e) => {
+        if (e.target === clockPopup) {
+          clockPopup.remove();
+        }
+      });
+
+      // Mostrar la ventana emergente
+      clockPopup.style.display = "block";
+    }
+
+
+  </script>
+
+</body>
+
+</html>
